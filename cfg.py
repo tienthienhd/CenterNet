@@ -44,6 +44,15 @@ heads = {
     'kps': n_kps * 2
 }
 
+weight_loss = {
+    "hm": 1,
+    "wh": 1,
+    "offset": 1,
+    "hm_kp": 1,
+    "kp_offset": 1,
+    "kps": 1
+}
+
 # train
 train_data_file = "/media/data_it/thiennt/cv_end_to_end/training/object_detection/centernet/datasets/id_train.txt"
 batch_size = 16

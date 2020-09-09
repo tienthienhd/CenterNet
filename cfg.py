@@ -10,6 +10,7 @@ def read_class_names(class_file_name):
 
 
 # common
+debug = True
 classes_file = '/media/data_it/thiennt/cv_end_to_end/training/object_detection/centernet/datasets/id.names'
 id2class, class2id = read_class_names(classes_file)
 
@@ -25,7 +26,7 @@ output_w = input_image_w // down_ratio
 n_kps = 4
 
 
-max_objs = 150
+max_objs = 10
 
 
 # model

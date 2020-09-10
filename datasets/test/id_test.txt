@@ -1,0 +1,4 @@
+/media/data_it/Data_set/images/tima/fe_crawled_pdf/verified/label_corner/123OkT3CNBOhI81eyw2E-NDDbM4BqHkbe_0.json
+/media/data_it/Data_set/images/tima/fe_crawled_pdf/verified/label_corner/127CYgbYcfJTiabuh8W6SPmncnnIah37e_0.json
+/media/data_it/Data_set/images/tima/fe_crawled_pdf/verified/label_corner/127QZJYyzsZ1J9vVhgd0YhHPAMjlM3cAf_0.json
+/media/data_it/Data_set/images/tima/fe_crawled_pdf/verified/label_corner/127r25c5GAwnXVnV9ZQ8CFqdsdzeRmmKr_0.json

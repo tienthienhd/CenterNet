@@ -39,15 +39,16 @@ def process_data(label_file, use_aug=False):
     hm = np.zeros((cfg.output_h, cfg.output_w, cfg.n_classes), dtype=np.float32)
     wh = np.zeros((cfg.max_objs, 2), dtype=np.float32)
     reg = np.zeros((cfg.max_objs, 2), dtype=np.float32)
-    ind = np.zeros(cfg.max_objs, dtype=np.float32)
-    reg_mask = np.zeros(cfg.max_objs, dtype=np.float32)
+    ind = np.zeros(cfg.max_objs, dtype=np.int32)
+    reg_mask = np.zeros(cfg.max_objs, dtype=np.int32)
 
     hm_kp = np.zeros((cfg.output_h, cfg.output_w, cfg.n_kps), dtype=np.float32)
-    kps = np.zeros((cfg.max_objs, cfg.n_kps * 2), dtype=np.float32)
-    kps_mask = np.zeros((cfg.max_objs, cfg.n_kps * 2), dtype=np.float32)
+    kps = np.zeros((cfg.max_objs, cfg.n_kps, 2), dtype=np.float32)
+    kps_mask = np.zeros((cfg.max_objs * cfg.n_kps), dtype=np.int32)# TODO: remove
+    kps_ind = np.zeros((cfg.max_objs, cfg.n_kps), dtype=np.int32)# TODO: remove
     kp_offset = np.zeros((cfg.max_objs * cfg.n_kps, 2), dtype=np.float32)
-    kp_ind = np.zeros((cfg.max_objs * cfg.n_kps), dtype=np.float32)
-    kp_mask = np.zeros((cfg.max_objs * cfg.n_kps), dtype=np.float32)
+    kp_ind = np.zeros((cfg.max_objs * cfg.n_kps), dtype=np.int32)
+    kp_mask = np.zeros((cfg.max_objs * cfg.n_kps), dtype=np.int32)
 
     # convert to feature scale
     boxes = boxes / cfg.down_ratio
@@ -68,8 +69,8 @@ def process_data(label_file, use_aug=False):
         reg_mask[idx] = 1
 
         for j in range(cfg.n_kps):
-            kps[idx, j * 2: j * 2 + 2] = points[idx, j, :2] - ct_int
-            kps_mask[idx, j * 2:j * 2 + 2] = 1
+            kps[idx, j] = points[idx, j, :2] - ct_int # TODO: FROM HERE
+            # kps_mask[idx, j * 2:j * 2 + 2] = 1 # TODO: remove
             pt_int = points[idx, j, :2].astype(np.int32)
             kp_offset[idx * cfg.n_kps + j] = points[idx, j, : 2] - pt_int
             kp_ind[idx * cfg.n_kps + j] = pt_int[1] * cfg.output_w + pt_int[0]
@@ -77,37 +78,39 @@ def process_data(label_file, use_aug=False):
 
             draw_umich_gaussian(hm_kp[:, :, j], pt_int, radius)
 
-    if cfg.debug:
-        print(reg_mask)
-        print(ind)
-        print(kp_ind)
-        print(kps_mask)
-        cv2.imshow("image", image)
-        cv2.imshow("hm", hm)
-        cv2.imshow("hm_kp", hm_kp[:, :, 1:])
-        cv2.waitKey(0)
-    return image, hm, wh, reg, reg_mask, ind, hm_kp, kps, kps_mask, kp_offset, kp_ind, kp_mask
+    # if cfg.debug:
+    #     print(reg_mask)
+    #     print(ind)
+    #     print(kp_ind)
+    #     print(kps_mask)
+    #     cv2.imshow("image", image)
+    #     cv2.imshow("hm", hm)
+    #     cv2.imshow("hm_kp", hm_kp[:, :, 1:])
+    #     cv2.waitKey(0)
+    return image, hm, wh, reg, reg_mask, ind, hm_kp, kps, kps_ind, kps_mask, kp_offset, kp_ind, kp_mask # TODO remove kps_ind, kps_mask
 
 
-def get_data(batch_files, use_aug):
+def get_data(batch_files):
     batch_image = np.zeros((cfg.batch_size, cfg.input_image_h, cfg.input_image_w, 3), dtype=np.float32)
 
     batch_hm = np.zeros((cfg.batch_size, cfg.output_h, cfg.output_w, cfg.n_classes), dtype=np.float32)
     batch_wh = np.zeros((cfg.batch_size, cfg.max_objs, 2), dtype=np.float32)
     batch_reg = np.zeros((cfg.batch_size, cfg.max_objs, 2), dtype=np.float32)
-    batch_reg_mask = np.zeros((cfg.batch_size, cfg.max_objs), dtype=np.float32)
-    batch_ind = np.zeros((cfg.batch_size, cfg.max_objs), dtype=np.float32)
+    batch_reg_mask = np.zeros((cfg.batch_size, cfg.max_objs), dtype=np.int32)
+    batch_ind = np.zeros((cfg.batch_size, cfg.max_objs), dtype=np.int32)
 
     batch_hm_kp = np.zeros((cfg.batch_size, cfg.output_h, cfg.output_w, cfg.n_kps), dtype=np.float32)
-    batch_kps = np.zeros((cfg.batch_size, cfg.max_objs, cfg.n_kps * 2), dtype=np.float32)
-    batch_kps_mask = np.zeros((cfg.batch_size, cfg.max_objs, cfg.n_kps * 2), dtype=np.float32)
+    batch_kps = np.zeros((cfg.batch_size, cfg.max_objs, cfg.n_kps, 2), dtype=np.float32)
+    batch_kps_ind = np.zeros((cfg.batch_size, cfg.max_objs, cfg.n_kps), dtype=np.int32)# TODO: remove
+    batch_kps_mask = np.zeros((cfg.batch_size, cfg.max_objs, cfg.n_kps), dtype=np.int32)# TODO: remove
     batch_kp_offset = np.zeros((cfg.batch_size, cfg.max_objs * cfg.n_kps, 2), dtype=np.float32)
-    batch_kp_ind = np.zeros((cfg.batch_size, cfg.max_objs * cfg.n_kps), dtype=np.float32)
-    batch_kp_mask = np.zeros((cfg.batch_size, cfg.max_objs * cfg.n_kps), dtype=np.float32)
+    batch_kp_ind = np.zeros((cfg.batch_size, cfg.max_objs * cfg.n_kps), dtype=np.int32)
+    batch_kp_mask = np.zeros((cfg.batch_size, cfg.max_objs * cfg.n_kps), dtype=np.int32)
 
     for num, line in enumerate(batch_files):
-        image, hm, wh, reg, reg_mask, ind, hm_kp, kps, kps_mask, kp_offset, kp_ind, kp_mask = process_data(line,
-                                                                                                           use_aug)
+        image, hm, wh, reg, reg_mask, ind, hm_kp, kps, kps_ind, kps_mask, kp_offset, kp_ind, kp_mask = process_data( # TODO: remove kps_ind and kps_mask
+            line,
+            use_aug=cfg.use_aug)
         batch_image[num, :, :, :] = image
 
         batch_hm[num, :, :, :] = hm
@@ -118,12 +121,12 @@ def get_data(batch_files, use_aug):
 
         batch_hm_kp[num, :, :, :] = hm_kp
         batch_kps[num, :, :] = kps
-        batch_kps_mask[num, :] = kps_mask
+        # batch_kps_mask[num, :] = kps_mask # TODO: remove
         batch_kp_offset[num, :] = kp_offset
         batch_kp_ind[num, :] = kp_ind
         batch_kp_mask[num, :] = kp_mask
 
-    return batch_image, batch_hm, batch_wh, batch_reg, batch_reg_mask, batch_ind, batch_hm_kp, batch_kps, batch_kps_mask, batch_kp_offset, batch_kp_ind, batch_kp_mask
+    return batch_image, batch_hm, batch_wh, batch_reg, batch_reg_mask, batch_ind, batch_hm_kp, batch_kps, batch_kps_mask, batch_kp_offset, batch_kp_ind, batch_kp_mask # TODO: remove batch_kps_mask
 
 
 if __name__ == '__main__':

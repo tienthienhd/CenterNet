@@ -11,13 +11,13 @@ def read_class_names(class_file_name):
 
 # common
 debug = True
-classes_file = '/media/data_it/thiennt/cv_end_to_end/training/object_detection/centernet/datasets/id.names'
+classes_file = '/media/data_it/thiennt/centernet/datasets/id.names'
 id2class, class2id = read_class_names(classes_file)
 
 n_classes = len(id2class)
 
-input_image_h = 512
-input_image_w = 512
+input_image_h = 256
+input_image_w = 256
 down_ratio = 4
 
 output_h = input_image_h // down_ratio
@@ -39,7 +39,7 @@ heads = {
     'offset': 2,
     'wh': 2,
 
-    'hm_kp': n_kps,
+    'kp_hm': n_kps,
     'kp_offset': 2,
     'kps': n_kps * 2
 }
@@ -48,13 +48,32 @@ weight_loss = {
     "hm": 1,
     "wh": 1,
     "offset": 1,
-    "hm_kp": 1,
+    "kp_hm": 1,
     "kp_offset": 1,
     "kps": 1
 }
 
 # train
-train_data_file = "/media/data_it/thiennt/cv_end_to_end/training/object_detection/centernet/datasets/id_train.txt"
-batch_size = 16
-epochs = 80
+train_data_file = "/media/data_it/thiennt/centernet/datasets/test/id_train.txt"
+use_aug = False
+batch_size = 4
+epochs = 3
 
+# learning rate
+lr_type = "piecewise"  # "exponential","piecewise","CosineAnnealing"
+lr = 1e-3  # exponential
+lr_decay_steps = 5000  # exponential
+lr_decay_rate = 0.95  # exponential
+lr_boundaries = [40000, 60000]  # piecewise
+lr_piecewise = [0.0001, 0.00001, 0.000001]  # piecewise
+warm_up_epochs = 2  # CosineAnnealing
+init_lr = 1e-4  # CosineAnnealing
+end_lr = 1e-6  # CosineAnnealing
+pre_train = True
+
+
+# test
+test_data_file = '/media/data_it/thiennt/centernet/datasets/test/id_test.txt'
+score_threshold = 0.3
+use_nms = True
+nms_thresh = 0.4

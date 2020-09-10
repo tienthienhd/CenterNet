@@ -159,8 +159,8 @@ def train():
         test_log_losses['kps'](losses['kps'])
         test_log_losses['kp_offset'](losses['kp_offset'])
 
-    train_summary_writer = tf.summary.create_file_writer("logs/train")
-    test_summary_writer = tf.summary.create_file_writer("logs/test")
+    train_summary_writer = tf.summary.create_file_writer("logs/{}/train".format(cfg.dataset_name))
+    test_summary_writer = tf.summary.create_file_writer("logs/{}/test".format(cfg.dataset_name))
     #
     #
     # ckpt.restore(manager.latest_checkpoint)

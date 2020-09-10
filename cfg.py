@@ -53,6 +53,8 @@ weight_loss = {
     "kps": 1
 }
 
+dataset_name = "id"
+
 # train
 train_data_file = "/media/data_it/thiennt/centernet/datasets/test/id_train.txt"
 use_aug = False

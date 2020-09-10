@@ -57,7 +57,7 @@ def compute_loss(pred, gt):
         "hm": hm_loss,
         "offset": offset_loss,
         "wh": wh_loss,
-        "hm_kp": hm_kp_loss,
+        "kp_hm": hm_kp_loss,
         "kp_offset": kp_offset_loss,
         "kps": kps_loss
     }

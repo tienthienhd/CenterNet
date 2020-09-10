@@ -10,7 +10,7 @@ def read_class_names(class_file_name):
 
 
 # common
-debug = True
+debug = False
 classes_file = '/media/data_it/thiennt/centernet/datasets/id.names'
 id2class, class2id = read_class_names(classes_file)
 
@@ -56,7 +56,7 @@ weight_loss = {
 # train
 train_data_file = "/media/data_it/thiennt/centernet/datasets/test/id_train.txt"
 use_aug = False
-batch_size = 4
+batch_size = 8
 epochs = 3
 
 # learning rate

@@ -39,9 +39,8 @@ def train():
         num_parallel_calls=6)
     test_dataset = test_dataset.prefetch(3)
 
-    iterator = iter(train_dataset)
-
-    input_data, batch_hm, batch_wh, batch_offset, batch_offset_mask, batch_ind, batch_hm_kp, batch_kps, batch_kps_mask, batch_kp_offset, batch_kp_ind, batch_kp_mask = iterator.get_next()
+    train_iterator = iter(train_dataset)
+    input_data, batch_hm, batch_wh, batch_offset, batch_offset_mask, batch_ind, batch_hm_kp, batch_kps, batch_kps_mask, batch_kp_offset, batch_kp_ind, batch_kp_mask = train_iterator.get_next()
     input_data.set_shape([cfg.batch_size, cfg.input_image_h, cfg.input_image_w, 3])
     batch_hm.set_shape([cfg.batch_size, cfg.output_h, cfg.output_w, cfg.n_classes])
     batch_wh.set_shape([cfg.batch_size, cfg.max_objs, 2])
@@ -70,15 +69,63 @@ def train():
         'kps_mask': batch_kps_mask
     }
 
+    test_iterator = iter(test_dataset)
+    test_input_data, test_batch_hm, test_batch_wh, test_batch_offset, test_batch_offset_mask, test_batch_ind, test_batch_hm_kp, test_batch_kps, test_batch_kps_mask, test_batch_kp_offset, test_batch_kp_ind, test_batch_kp_mask = test_iterator.get_next()
+    test_input_data.set_shape([cfg.batch_size, cfg.input_image_h, cfg.input_image_w, 3])
+    test_batch_hm.set_shape([cfg.batch_size, cfg.output_h, cfg.output_w, cfg.n_classes])
+    test_batch_wh.set_shape([cfg.batch_size, cfg.max_objs, 2])
+    test_batch_offset.set_shape([cfg.batch_size, cfg.max_objs, 2])
+    test_batch_offset_mask.set_shape([cfg.batch_size, cfg.max_objs])
+    test_batch_ind.set_shape([cfg.batch_size, cfg.max_objs])
+
+    test_batch_hm_kp.set_shape([cfg.batch_size, cfg.output_h, cfg.output_w, cfg.n_kps])
+    test_batch_kps.set_shape([cfg.batch_size, cfg.max_objs, cfg.n_kps, 2])
+    test_batch_kps_mask.set_shape([cfg.batch_size, cfg.max_objs, cfg.n_kps])
+    test_batch_kp_offset.set_shape([cfg.batch_size, cfg.max_objs * cfg.n_kps, 2])
+    test_batch_kp_ind.set_shape([cfg.batch_size, cfg.max_objs * cfg.n_kps])
+    test_batch_kp_mask.set_shape([cfg.batch_size, cfg.max_objs * cfg.n_kps])
+
+    test_gt = {
+        'hm': test_batch_hm,
+        'wh': test_batch_wh,
+        'offset': test_batch_offset,
+        'ind': test_batch_ind,
+        'mask': test_batch_offset_mask,
+        'kp_hm': test_batch_hm_kp,
+        'kps': test_batch_kps,
+        'kp_offset': test_batch_kp_offset,
+        'kp_mask': test_batch_kp_mask,
+        'kp_ind': test_batch_kp_ind,
+        'kps_mask': test_batch_kps_mask
+    }
 
     # define model and loss
 
     model = CenterNet()
     optimizer = tf.keras.optimizers.Adam()
 
-    train_loss = tf.keras.metrics.Mean(name='train_loss')
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
+    train_log_losses = {
+        "total": tf.keras.metrics.Mean(name='total_loss'),
+        "hm":  tf.keras.metrics.Mean(name='hm_loss'),
+        "wh":  tf.keras.metrics.Mean(name='wh_loss'),
+        "offset":  tf.keras.metrics.Mean(name='offset_loss'),
+        "kps":  tf.keras.metrics.Mean(name='kps_loss'),
+        "kp_offset":  tf.keras.metrics.Mean(name='kp_offset_loss'),
+        "kp_hm":  tf.keras.metrics.Mean(name='kp_hm_loss')
+    }
 
+    test_log_losses = {
+        "total": tf.keras.metrics.Mean(name='total_loss'),
+        "hm": tf.keras.metrics.Mean(name='hm_loss'),
+        "wh": tf.keras.metrics.Mean(name='wh_loss'),
+        "offset": tf.keras.metrics.Mean(name='offset_loss'),
+        "kps": tf.keras.metrics.Mean(name='kps_loss'),
+        "kp_offset": tf.keras.metrics.Mean(name='kp_offset_loss'),
+        "kp_hm": tf.keras.metrics.Mean(name='kp_hm_loss')
+    }
+
+    # ckpt = tf.train.Checkpoint(step=tf.Variable(1), iterator=train_iterator)
+    # manager = tf.train.CheckpointManager(ckpt, 'logs/tf_ckpts', max_to_keep=5)
 
     @tf.function
     def train_step(images, labels):
@@ -90,31 +137,59 @@ def train():
 
         grads = tape.gradient(losses['total'], model.trainable_weights)
         optimizer.apply_gradients(zip(grads, model.trainable_weights))
-        train_loss(losses['total'])
+        train_log_losses['total'](losses['total'])
+        train_log_losses['hm'](losses['hm'])
+        train_log_losses['offset'](losses['offset'])
+        train_log_losses['wh'](losses['wh'])
+        train_log_losses['kp_hm'](losses['kp_hm'])
+        train_log_losses['kps'](losses['kps'])
+        train_log_losses['kp_offset'](losses['kp_offset'])
 
     def test_step(images, labels):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
         pred = model(images, training=False)
-        t_loss = compute_loss(pred, labels)
+        losses = compute_loss(pred, labels)
 
-        test_loss(t_loss['total'])
+        test_log_losses['total'](losses['total'])
+        test_log_losses['hm'](losses['hm'])
+        test_log_losses['offset'](losses['offset'])
+        test_log_losses['wh'](losses['wh'])
+        test_log_losses['kp_hm'](losses['kp_hm'])
+        test_log_losses['kps'](losses['kps'])
+        test_log_losses['kp_offset'](losses['kp_offset'])
 
+    train_summary_writer = tf.summary.create_file_writer("logs/train")
+    test_summary_writer = tf.summary.create_file_writer("logs/test")
+    #
+    #
+    # ckpt.restore(manager.latest_checkpoint)
     for epoch in range(cfg.epochs):
         # Reset the metrics at the start of the next epoch
-        train_loss.reset_states()
-        test_loss.reset_states()
+        for k in train_log_losses.keys():
+            train_log_losses[k].reset_states()
+            test_log_losses[k].reset_states()
 
         for i in range(num_train_batch):
             train_step(input_data, gt)
+            with train_summary_writer.as_default():
+                for k in train_log_losses.keys():
+                    tf.summary.scalar("loss/" + k, train_log_losses[k].result(), step=epoch * num_train_batch + i)
 
         for i in range(num_test_batch):
-            test_step(input_data, gt)
+            test_step(test_input_data, test_gt)
+            with test_summary_writer.as_default():
+                for k in test_log_losses.keys():
+                    tf.summary.scalar("loss/" + k, test_log_losses[k].result(), step=epoch * num_train_batch + i)
+
+        # if int(ckpt.step) % 1 == 0:
+        #     save_path = manager.save()
+        #     print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
 
         template = 'Epoch {}, Loss: {}, Test Loss: {}'
         print(template.format(epoch + 1,
-                              train_loss.result(),
-                              test_loss.result()))
+                              train_log_losses['total'].result(),
+                              test_log_losses['total'].result()))
 
 
 # # define train op

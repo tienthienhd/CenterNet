@@ -13,7 +13,7 @@ backbone = {
 
 def get_backbone(input, type):
     network = backbone[type]
-    return network(include_top=False, weights=None, input_tensor=input)
+    return network(include_top=False, weights="imagenet", input_tensor=input)
 
 
 def upsampling(inputs, method='deconv'):

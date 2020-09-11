@@ -16,8 +16,8 @@ def CenterNet():
     feature = upsampling(feature)
 
     def _conv_head(input, n_filter, name):
-        curr_channel = input.shape[-1]
-        x = Conv2D(curr_channel, kernel_size=3, padding='same', use_bias=False, name=name + '_conv1')(input)
+        # curr_channel = input.shape[-1]
+        x = Conv2D(64, kernel_size=3, padding='same', use_bias=False, name=name + '_conv1')(input)
         x = BatchNormalization(name=name + "_bn1")(x)
         x = Activation('relu', name=name + "_relu1")(x)
 

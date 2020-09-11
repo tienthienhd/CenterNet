@@ -16,8 +16,8 @@ id2class, class2id = read_class_names(classes_file)
 
 n_classes = len(id2class)
 
-input_image_h = 256
-input_image_w = 256
+input_image_h = 512
+input_image_w = 512
 down_ratio = 4
 
 output_h = input_image_h // down_ratio
@@ -31,7 +31,7 @@ max_objs = 10
 
 # model
 backbone = {
-    'type': 'resnet18'
+    'type': 'resnet50'
 }
 
 heads = {
@@ -58,8 +58,8 @@ dataset_name = "id"
 # train
 train_data_file = "/media/data_it/thiennt/centernet/datasets/test/id_train.txt"
 use_aug = False
-batch_size = 8
-epochs = 3
+batch_size = 2
+epochs = 300
 
 # learning rate
 lr_type = "piecewise"  # "exponential","piecewise","CosineAnnealing"
